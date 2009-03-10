@@ -68,24 +68,24 @@ module WebsiteOptimizerHelper
     google_analytics_tracking_script(tracker_id, "/#{tracker_id}/test")
   end
 
-  # Assumes using Google Analytics with ga.js
+  # For Local Validation Only
   #
-  def ga_tracking_script(tracker_id, tracker)
-    tracker_name = 'websiteOptimizerTracker' + tracker_id
-    content = "var #{tracker_name} = _gat._getTracker(\"#{account_id}\");"
-    content << "#{tracker_name}._initData();"
-    content << "#{tracker_name}._trackPageView(\"#{tracker}\");"
+  def google_analytics_include
+    "<script type=\"text/javascript\">
+    if(typeof(_gat)!='object')document.write('<sc'+'ript src=\"http'+
+    (document.location.protocol=='https:'?'s://ssl':'://www')+
+    '.google-analytics.com/ga.js\"></sc'+'ript>')</script>
+    "
+  end
+  
+  def google_analytics_tracking_script(tracker_id, tracker)
+    tracker_name = RAILS_ENV == 'development' ? 'pageTracker' : 'websiteOptimizerTracker' + tracker_id
+    content_for(:website_optimizer_tracking) { google_analytics_include } if RAILS_ENV == 'development'
+    content  = "try {"
+    content << "var #{tracker_name}=_gat._getTracker(\"#{account_id}\");"
+    content << "#{tracker_name}._trackPageview(\"#{tracker}\");"
+    content << "}catch(err){}"
     content_for(:website_optimizer_tracking) { content_tag('script', content, :type => "text/javascript") }
   end
-  alias google_analytics_tracking_script ga_tracking_script if RAILS_ENV == 'production'
-
-  # For use with validating pages when setting up experiment
-  #
-  def urchin_tracking_script(tracker_id, tracker)
-    urchin = content_tag('script', "if(typeof(urchinTracker)!='function')document.write('<sc'+'ript src=\"'+'http'+(document.location.protocol=='https:'?'s://ssl':'://www')+'.google-analytics.com/urchin.js'+'\"></sc'+'ript>')")
-    tracker = content_tag('script', "try {_uacct = '#{account_id}';urchinTracker(\"#{tracker}\");} catch (err) { }")
-    content_for(:website_optimizer_tracking) { urchin + tracker }
-  end
-  alias google_analytics_tracking_script urchin_tracking_script if RAILS_ENV == 'development'
 
 end
